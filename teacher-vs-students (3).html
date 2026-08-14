@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher vs. Students</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cyan:#0BA5C7; --cyan-dark:#086481; --cyan-deep:#0a3b47;
+    --red:#D6303F; --red-dark:#9E1B28;
+    --gold:#E8B44A;
+    --ink:#0A1E27; --ink-2:#0F2C38;
+    --paper:#F5F1E6; --paper-dim:#C9CBC2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(ellipse at 50% -10%, #123542 0%, var(--ink) 55%), var(--ink);
+    color:var(--paper); font-family:'Inter',sans-serif; min-height:100vh; padding:28px 20px 60px;
+  }
+  .wrap{max-width:1140px;margin:0 auto;}
+  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    border-bottom:3px solid var(--cyan-dark);padding-bottom:14px;margin-bottom:22px;}
+  h1{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:0.5px;font-size:clamp(28px,4.5vw,44px);margin:0;line-height:0.95;}
+  h1 span{color:var(--gold);}
+  .subtitle{font-size:13px;color:var(--paper-dim);letter-spacing:0.4px;}
+  .io-buttons{display:flex;gap:8px;}
+  .io-buttons button{font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;background:transparent;color:var(--paper-dim);
+    border:1px solid #2c4a55;padding:8px 12px;border-radius:7px;cursor:pointer;transition:.15s;}
+  .io-buttons button:hover{border-color:var(--cyan);color:var(--paper);}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;align-items:center;}
+  .tab{font-family:'Inter',sans-serif;font-weight:600;font-size:14px;background:var(--ink-2);border:1px solid #1c3e4a;
+    color:var(--paper-dim);padding:9px 16px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s;}
+  .tab:hover{color:var(--paper);border-color:var(--cyan);}
+  .tab.active{background:var(--cyan-dark);color:#fff;border-color:var(--cyan);}
+  .tab .rm{opacity:0.5;font-size:12px;}
+  .tab .rm:hover{opacity:1;color:var(--red);}
+  .add-tab{font-family:'Inter',sans-serif;font-size:14px;font-weight:600;background:transparent;border:1px dashed #335865;
+    color:var(--paper-dim);padding:9px 14px;border-radius:20px;cursor:pointer;}
+  .add-tab:hover{border-color:var(--gold);color:var(--gold);}
+  .scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;background:linear-gradient(180deg,#0d2731,#0a1e27);
+    border:1px solid #1c3e4a;border-radius:16px;padding:22px 18px;margin-bottom:28px;}
+  .side{text-align:center;}
+  .side .label{font-family:'Anton',sans-serif;font-size:15px;letter-spacing:2px;color:var(--paper-dim);}
+  .side.students .label{color:var(--cyan);}
+  .side.teacher .label{color:var(--red);}
+  .side .score{font-family:'Space Mono',monospace;font-weight:700;font-size:clamp(44px,8vw,72px);line-height:1;margin-top:2px;transition:transform .25s ease;}
+  .side .score.pulse{transform:scale(1.18);}
+  .vs{font-family:'Anton',sans-serif;font-size:20px;color:var(--gold);padding:0 18px;}
+  .class-name{text-align:center;font-size:12px;letter-spacing:1.5px;color:var(--paper-dim);grid-column:1/-1;margin-top:12px;text-transform:uppercase;}
+  .main{display:grid;grid-template-columns:1fr 340px;gap:34px;align-items:start;}
+  @media (max-width:820px){.main{grid-template-columns:1fr;}}
+  .wheel-zone{display:flex;flex-direction:column;align-items:center;}
+  .wheel-outer{position:relative;width:min(420px,88vw);height:min(420px,88vw);margin-top:8px;}
+  .pointer{position:absolute;top:-6px;left:50%;width:0;height:0;transform:translateX(-50%);border-left:16px solid transparent;
+    border-right:16px solid transparent;border-top:28px solid var(--gold);filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));z-index:5;}
+  .wheel-ring{position:absolute;inset:-10px;border-radius:50%;background:conic-gradient(from 0deg, var(--gold), #b98a2f, var(--gold));z-index:0;}
+  #wheel{position:absolute;inset:0;border-radius:50%;box-shadow:0 10px 40px rgba(0,0,0,.45), inset 0 0 0 6px var(--ink);
+    transition:transform 4.2s cubic-bezier(.15,.68,.18,1);overflow:hidden;}
+  .segment-label{position:absolute;top:50%;left:50%;width:44%;text-align:right;padding-right:14px;transform-origin:left center;
+    margin-top:-0.65em;font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);
+    line-height:1.15;pointer-events:none;}
+  .hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffd97a, var(--gold) 60%, #b9862c 100%);border:4px solid var(--ink);color:var(--ink);
+    font-family:'Anton',sans-serif;font-size:16px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:6;user-select:none;transition:transform .1s;}
+  .hub:active{transform:translate(-50%,-50%) scale(0.94);}
+  .hub.disabled{opacity:0.5;cursor:default;}
+  .category-panel{margin-top:24px;width:100%;max-width:420px;background:var(--ink-2);border:1px solid #1c3e4a;border-radius:14px;
+    padding:18px;display:none;}
+  .category-panel .cat-title{font-family:'Anton',sans-serif;font-size:18px;color:var(--gold);letter-spacing:1px;margin-bottom:10px;}
+  .category-panel .cat-prompt{font-size:16px;line-height:1.5;margin-bottom:14px;}
+  .category-panel .cat-note{font-size:12.5px;color:var(--paper-dim);margin-bottom:14px;font-style:italic;}
+  .timer-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .timer-display{font-family:'Space Mono',monospace;font-weight:700;font-size:30px;color:var(--cyan);}
+  .timer-row button{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;background:transparent;border:1px solid #2c4a55;
+    color:var(--paper-dim);padding:7px 11px;border-radius:7px;cursor:pointer;}
+  .timer-row button:hover{border-color:var(--cyan);color:var(--paper);}
+  .reveal-btn, .secret-btn{display:block;width:100%;background:var(--cyan-dark);color:#fff;border:none;padding:11px;border-radius:8px;
+    font-weight:700;font-size:13px;cursor:pointer;margin-bottom:12px;}
+  .reveal-btn:hover, .secret-btn:hover{background:var(--cyan);}
+  .answer-box{background:var(--ink);border:1px dashed var(--gold);border-radius:8px;padding:10px 12px;margin-bottom:14px;
+    font-size:14px;color:var(--gold);display:none;}
+  .counter-row{display:flex;align-items:center;justify-content:space-between;background:var(--ink);border-radius:8px;
+    padding:10px 14px;margin-bottom:14px;}
+  .counter-row .count{font-family:'Space Mono',monospace;font-weight:700;font-size:20px;}
+  .counter-row button{background:var(--cyan-dark);color:#fff;border:none;width:34px;height:34px;border-radius:7px;font-size:16px;
+    font-weight:700;cursor:pointer;}
+  .counter-row button:hover{background:var(--cyan);}
+  .secret-reveal{text-align:center;font-family:'Anton',sans-serif;font-size:26px;color:var(--paper);min-height:34px;margin-bottom:12px;
+    letter-spacing:0.5px;}
+  .secret-reveal.spinning{color:var(--cyan);}
+  .result-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+  .result-buttons button{font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;padding:11px 16px;border-radius:9px;
+    border:none;cursor:pointer;transition:.15s;flex:1;min-width:120px;}
+  .win-students{background:var(--cyan);color:#fff;}
+  .win-students:hover{background:var(--cyan-dark);}
+  .win-teacher{background:var(--red);color:#fff;}
+  .win-teacher:hover{background:var(--red-dark);}
+  .panel{background:var(--ink-2);border:1px solid #1c3e4a;border-radius:14px;padding:18px;}
+  .panel h2{font-family:'Anton',sans-serif;font-weight:400;font-size:15px;letter-spacing:1px;margin:0 0 12px;color:var(--paper-dim);}
+  .log{list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;font-size:13px;}
+  .log li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #17323d;color:var(--paper-dim);}
+  .log li .g{color:var(--paper);}
+  .log li .w-students{color:var(--cyan);font-weight:700;}
+  .log li .w-teacher{color:var(--red);font-weight:700;}
+  .log .empty{color:var(--paper-dim);opacity:.6;font-style:italic;}
+  .best-stat{font-size:12px;color:var(--gold);margin-top:10px;padding-top:10px;border-top:1px solid #1c3e4a;}
+  footer{text-align:center;color:var(--paper-dim);font-size:11.5px;margin-top:34px;opacity:.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Teacher <span>vs.</span> Students</h1>
+      <div class="subtitle">Friday Five — spin it, think it, tally it</div>
+    </div>
+    <div class="io-buttons">
+      <button id="saveBtn">💾 Save progress</button>
+      <button id="loadBtn">📂 Load progress</button>
+      <input type="file" id="fileInput" accept="application/json" style="display:none;">
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="scoreboard">
+    <div class="side students"><div class="label">STUDENTS</div><div class="score" id="studentScore">0</div></div>
+    <div class="vs">VS</div>
+    <div class="side teacher"><div class="label">TEACHER</div><div class="score" id="teacherScore">0</div></div>
+    <div class="class-name" id="className">—</div>
+  </div>
+
+  <div class="main">
+    <div class="wheel-zone">
+      <div class="wheel-outer">
+        <div class="wheel-ring"></div>
+        <div class="pointer"></div>
+        <div id="wheel"></div>
+        <div class="hub" id="spinBtn">SPIN</div>
+      </div>
+
+      <div class="category-panel" id="panel">
+        <div class="cat-title" id="catTitle"></div>
+        <div class="cat-prompt" id="catPrompt"></div>
+        <div class="cat-note" id="catNote" style="display:none;"></div>
+
+        <div class="timer-row" id="timerRow" style="display:none;">
+          <div class="timer-display" id="timerDisplay">0:00</div>
+          <button id="timerPause">Pause</button>
+          <button id="timerReset">Reset</button>
+        </div>
+
+        <button class="reveal-btn" id="revealBtn" style="display:none;">Reveal Answer</button>
+        <div class="answer-box" id="answerBox"></div>
+
+        <div id="fifteenQBlock" style="display:none;">
+          <button class="secret-btn" id="secretBtn">🎲 Reveal Secret Item</button>
+          <div class="secret-reveal" id="secretReveal">— send the group to the hall first —</div>
+          <div class="counter-row">
+            <span>Questions asked</span>
+            <div>
+              <button id="qMinus">−</button>
+              <span class="count" id="qCount">0</span>/15
+              <button id="qPlus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-buttons">
+          <button class="win-students" data-winner="students">Students win 🎉</button>
+          <button class="win-teacher" data-winner="teacher">Teacher wins 😏</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-stack">
+      <div class="panel">
+        <h2>THIS CLASS'S HISTORY</h2>
+        <ul class="log" id="log"></ul>
+        <div class="best-stat" id="bestStat" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Click "Save progress" at the end of the day and "Load progress" next Friday to keep the running tally going all year.</footer>
+</div>
+
+<script>
+const PERIODS = ["Period 2","Period 4","Period 6","Period 7"];
+
+function splitBank(all){
+  const per = {};
+  PERIODS.forEach((p,i)=>{ per[p] = all.slice(i*10, i*10+10); });
+  per._all = all;
+  return per;
+}
+
+const RIDDLES_ALL = [
+  {q:"The more you take, the more you leave behind. What am I?", a:"Footsteps"},
+  {q:"I have keys but no locks, space but no room, and you can enter but not go inside. What am I?", a:"A keyboard"},
+  {q:"What has a face and two hands but no arms or legs?", a:"A clock"},
+  {q:"What gets wetter the more it dries?", a:"A towel"},
+  {q:"I speak without a mouth and hear without ears. What am I?", a:"An echo"},
+  {q:"What has many teeth but cannot bite?", a:"A comb"},
+  {q:"The person who makes it sells it. The person who buys it never uses it. The person who uses it never knows they're using it. What is it?", a:"A coffin"},
+  {q:"What has a neck but no head?", a:"A bottle"},
+  {q:"What can travel around the world while staying in one corner?", a:"A stamp"},
+  {q:"What has to be broken before you can use it?", a:"An egg"},
+  {q:"I am tall when I'm young and short when I'm old. What am I?", a:"A candle"},
+  {q:"What has one eye but cannot see?", a:"A needle"},
+  {q:"What goes up but never comes down?", a:"Your age"},
+  {q:"What can you catch but not throw?", a:"A cold"},
+  {q:"What has a ring but no finger?", a:"A telephone"},
+  {q:"What runs but never walks, has a bed but never sleeps?", a:"A river"},
+  {q:"What building has the most stories?", a:"A library"},
+  {q:"What can you break without ever touching it?", a:"A promise"},
+  {q:"What has a heart that doesn't beat?", a:"An artichoke"},
+  {q:"I'm not alive, but I grow. I don't have lungs, but I need air. What am I?", a:"Fire"},
+  {q:"What has words but never speaks?", a:"A book"},
+  {q:"What five-letter word becomes shorter when you add two letters to it?", a:'"Short" — add "er" and it becomes "shorter"'},
+  {q:"What is full of holes but still holds water?", a:"A sponge"},
+  {q:"What comes once in a minute, twice in a moment, but never in a thousand years?", a:"The letter M"},
+  {q:"What can fill a room but takes up no space?", a:"Light"},
+  {q:"What has a thumb and four fingers but isn't alive?", a:"A glove"},
+  {q:"What kind of coat can only be put on when it's wet?", a:"A coat of paint"},
+  {q:"What invention lets you look right through a wall?", a:"A window"},
+  {q:"What has 13 hearts but no other organs?", a:"A deck of cards"},
+  {q:"What goes through cities and fields but never actually moves?", a:"A road"},
+  {q:"What has a bark but no bite?", a:"A tree"},
+  {q:"What kind of room has no doors or windows?", a:"A mushroom"},
+  {q:"What has legs but doesn't walk?", a:"A table"},
+  {q:"What starts with T, ends with T, and has T inside it?", a:"A teapot"},
+  {q:"What can you keep even after you give it to someone else?", a:"Your word"},
+  {q:"What has many keys but can't open a single door?", a:"A piano"},
+  {q:"What is always right in front of you but can never be seen?", a:"The future"},
+  {q:"What has a spine but no bones?", a:"A book"},
+  {q:"What goes up when the rain comes down?", a:"An umbrella"},
+  {q:"What can you hold without ever touching it?", a:"Your breath"}
+];
+
+const ESTIMATIONS_ALL = [
+  {q:"How many times does an average heart beat in one day?", a:"~100,000 times"},
+  {q:"How many minutes are in a school year (180 days, ~7 hours a day)?", a:"~75,600 minutes"},
+  {q:"How many slices of pizza are eaten across the U.S. every second?", a:"~350 slices"},
+  {q:"How many hairs are on an average human head?", a:"~100,000 hairs"},
+  {q:"How many steps does the average person take in a day?", a:"~6,000 steps"},
+  {q:"How many gallons of water does a 10-minute shower use?", a:"~25 gallons"},
+  {q:"How many bones are in the adult human body?", a:"206 bones"},
+  {q:"How many times does the average person blink in a day?", a:"~17,000 times"},
+  {q:"How many words does the average person speak in a day?", a:"~16,000 words"},
+  {q:"How many pizzas would it take to completely cover a football field?", a:"~2,000 pizzas (rough estimate)"},
+  {q:"How many texts does the average teen send per day?", a:"~65 texts"},
+  {q:"About how many minutes of a school day are spent walking in hallways?", a:"~15 minutes"},
+  {q:"How many pencils does the average student go through in a school year?", a:"~12 pencils"},
+  {q:"How many stars can you see with the naked eye on a clear night?", a:"~2,500 stars"},
+  {q:"How many times can you fold a single piece of paper in half (physically)?", a:"About 7 times"},
+  {q:"How many gallons of water are in an average backyard swimming pool?", a:"~20,000 gallons"},
+  {q:"How many muscles does it take to smile?", a:"~12 muscles"},
+  {q:"How many hours does the average person spend on their phone per day?", a:"~4-5 hours"},
+  {q:"How many jellybeans fit in a standard 1-gallon jar?", a:"~2,000 jellybeans"},
+  {q:"How many times does a heart beat during a 90-minute movie?", a:"~6,300 beats"},
+  {q:"How many pages are in the average novel?", a:"~300 pages"},
+  {q:"About how many days would it take to walk 1,400 miles at 20 miles a day?", a:"~70 days"},
+  {q:"How many M&Ms fit in a standard mason jar?", a:"~500 M&Ms"},
+  {q:"How many breaths does a person take in one hour?", a:"~720 breaths"},
+  {q:"How many books does the average school library hold?", a:"~10,000 books"},
+  {q:"How many minutes of commercials are in a 1-hour TV show?", a:"~14-16 minutes"},
+  {q:"About how many calories are burned during 8 hours of sleep?", a:"~500 calories"},
+  {q:"How many times does a person swallow in a day?", a:"~600 times"},
+  {q:"How many gallons of milk can a dairy cow produce in one day?", a:"~6-7 gallons"},
+  {q:"How many students can fit on a standard school bus?", a:"~72 students"},
+  {q:"How many miles does the average car tire last before it needs replacing?", a:"~50,000 miles"},
+  {q:"How fast does an Olympic swimmer's heart beat per minute during a race?", a:"~180 beats per minute"},
+  {q:"About how many grains of rice are in a 1-pound bag?", a:"~9,000 grains"},
+  {q:"How many sheets of paper can one tree produce?", a:"~8,000 sheets"},
+  {q:"How many hot dogs did the winner eat at the last Nathan's hot dog eating contest?", a:"~60-70 hot dogs"},
+  {q:"How much would a school bus full of 72 kids weigh if each weighs about 80 lbs?", a:"~5,760 lbs"},
+  {q:"How many seconds are in a 180-day school year?", a:"~15,552,000 seconds"},
+  {q:"About how many blades of grass are on a football field?", a:"Tens of millions"},
+  {q:"How many times do professional dealers shuffle a deck for it to be truly random?", a:"About 7 times"},
+  {q:"How many gallons of water does the average person use in a day (all uses combined)?", a:"~80-100 gallons"}
+];
+
+const CONVINCE_ALL = [
+  "Cereal is a soup.", "A hot dog is a sandwich.", "Summer break should be one month longer.",
+  "Students should be allowed to listen to music while working independently.",
+  "Homework should not count toward a grade.", "Field trips are more valuable than a normal day of class.",
+  "Calculators should be allowed on every math test.", "Group projects are better than working alone.",
+  "The school day should start later in the morning.", "Video games can teach real problem-solving skills.",
+  "Students should be able to pick their own seats.", "A four-day school week would help students learn better.",
+  "Recess should be required in middle school.", "Reading the book is better than watching the movie.",
+  "It's better to be really good at one subject than average at all of them.",
+  "Students should be able to retake any test to improve their grade.",
+  "Handwriting is still an important skill to learn.", "Pineapple belongs on pizza.",
+  "Robots will be better teachers than humans someday.", "It's more important to be right than to be first.",
+  "Mistakes are the best way to learn.", "Every student should learn to code.",
+  "Winning isn't everything in a competition.", "Grades don't measure how smart someone really is.",
+  "A dog is a better pet than a cat.", "Snow days should be made up online instead of adding days in June.",
+  "Students learn more from a strict teacher than an easy one.", "Phones should be allowed in class for schoolwork.",
+  "It's okay to use AI to help brainstorm homework ideas.", "The best part of school is seeing friends, not learning.",
+  "Every classroom should have a class pet.", "Studying in silence is better than studying with background music.",
+  "A test grade should never be worth more than daily effort.", "Teachers should assign less homework and more in-class practice.",
+  "It's better to guess and be wrong than to leave a question blank.", "Cursive should still be taught in school.",
+  "Working under pressure makes people perform better.", "The classroom seating chart should change every month.",
+  "A shorter, harder test is better than a long, easy one.", "Losing a game teaches you more than winning it."
+];
+
+const RIDDLE_BANK = splitBank(RIDDLES_ALL);
+const ESTIMATION_BANK = splitBank(ESTIMATIONS_ALL);
+const CONVINCE_BANK = splitBank(CONVINCE_ALL);
+
+const SECRET_ITEMS = [
+  "Octopus","Penguin","Kangaroo","Platypus","Flamingo","Chameleon","Sloth","Hedgehog",
+  "Umbrella","Stapler","Toothbrush","Backpack","Flashlight","Paperclip","Doorknob","Trampoline",
+  "Pizza","Watermelon","Popcorn","Taco","Pickle","Waffle","Donut",
+  "Firefighter","Astronaut","Chef","Dentist","Librarian","Veterinarian",
+  "Beach","Library","Airport","Zoo","Mountain","Volcano",
+  "Locker","Whiteboard","Pencil sharpener","Hallway pass"
+];
+
+const BEAT_THE_TEACHER = [
+  {name:"Rock Paper Scissors (best of 3)", judge:false},
+  {name:"Bottle Flip", judge:false},
+  {name:"Staring Contest", judge:false},
+  {name:"Speed Drawing Battle", judge:true},
+  {name:"Thumb War", judge:false},
+  {name:"Odds or Evens", judge:false},
+  {name:"Balance a Book on Your Head — longest wins", judge:false},
+  {name:"Tongue Twister Speed-Off (3x fast, no mistakes)", judge:false},
+  {name:"Memory Flash — 10 words, 10 seconds, who recalls more", judge:false}
+];
+
+const CATEGORIES = [
+  {key:"riddle", name:"Riddle Duel", color:"#0BA5C7"},
+  {key:"estimation", name:"Estimation Showdown", color:"#D6303F"},
+  {key:"convince", name:"Convince the Teacher", color:"#E8B44A"},
+  {key:"fifteen", name:"15 Questions", color:"#086481"},
+  {key:"beat", name:"Beat the Teacher", color:"#9E1B28"}
+];
+
+let state = {
+  activeClass: "Period 2",
+  classes: {
+    "Period 2": newClassData(), "Period 4": newClassData(),
+    "Period 6": newClassData(), "Period 7": newClassData()
+  }
+};
+
+function newClassData(){
+  return { students:0, teacher:0, log:[], queues:{riddle:null,estimation:null,convince:null},
+    exhausted:{riddle:false,estimation:false,convince:false} };
+}
+
+let currentRotation = 0;
+let spinning = false;
+let pendingCategory = null;
+let pendingLabel = "";
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+
+const el = id => document.getElementById(id);
+function activeData(){ return state.classes[state.activeClass]; }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function bankFor(category){
+  const banks = {riddle:RIDDLE_BANK, estimation:ESTIMATION_BANK, convince:CONVINCE_BANK};
+  const b = banks[category];
+  return b[state.activeClass] || b._all;
+}
+
+function drawItem(category){
+  const d = activeData();
+  const bank = bankFor(category);
+  let q = d.queues[category];
+  if(!q || q.length===0 && !d.exhausted[category]){ q = shuffle([...Array(bank.length).keys()]); d.queues[category]=q; }
+  if(!q || q.length===0) return null;
+  const idx = q.pop();
+  if(q.length===0){ d.exhausted[category] = true; }
+  return bank[idx];
+}
+function availableCategories(){
+  const d = activeData();
+  return CATEGORIES.filter(c => !(d.exhausted && d.exhausted[c.key]));
+}
+
+/* ---------- Tabs / Scoreboard / Log ---------- */
+function renderTabs(){
+  const box = el('tabs'); box.innerHTML='';
+  Object.keys(state.classes).forEach(name=>{
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (name===state.activeClass ? ' active':'');
+    tab.innerHTML = `<span>${name}</span>` + (Object.keys(state.classes).length>1 ? `<span class="rm" data-rm="${name}">✕</span>`:'');
+    tab.addEventListener('click',(e)=>{ if(e.target.dataset.rm) return; state.activeClass=name; resetPanel(); renderAll(); });
+    box.appendChild(tab);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className='add-tab'; addBtn.textContent='+ Add class';
+  addBtn.addEventListener('click', addClass);
+  box.appendChild(addBtn);
+  box.querySelectorAll('.rm').forEach(rm=>{
+    rm.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const name = rm.dataset.rm;
+      if(confirm(`Remove "${name}" and its tally? This can't be undone.`)){
+        delete state.classes[name];
+        if(state.activeClass===name){ state.activeClass = Object.keys(state.classes)[0]; }
+        resetPanel(); renderAll();
+      }
+    });
+  });
+}
+function addClass(){
+  const name = prompt("Name this class (e.g. Period 3):");
+  if(!name) return;
+  const trimmed = name.trim(); if(!trimmed) return;
+  if(!state.classes[trimmed]) state.classes[trimmed] = newClassData();
+  state.activeClass = trimmed; resetPanel(); renderAll();
+}
+function renderScoreboard(){
+  const d = activeData();
+  el('studentScore').textContent = d.students;
+  el('teacherScore').textContent = d.teacher;
+  el('className').textContent = state.activeClass;
+}
+function pulse(id){ const n=el(id); n.classList.add('pulse'); setTimeout(()=>n.classList.remove('pulse'),250); }
+function renderLog(){
+  const d = activeData();
+  const list = el('log'); list.innerHTML='';
+  if(d.log.length===0){ list.innerHTML='<li class="empty">No games played yet — give the wheel a spin.</li>'; el('bestStat').style.display='none'; return; }
+  d.log.slice().reverse().forEach(entry=>{
+    const li = document.createElement('li');
+    const wc = entry.winner==='students' ? 'w-students':'w-teacher';
+    const wt = entry.winner==='students' ? 'Students':'Teacher';
+    li.innerHTML = `<span class="g">${entry.date} — ${entry.game}</span><span class="${wc}">${wt}</span>`;
+    list.appendChild(li);
+  });
+  const fq = d.log.filter(e=>e.game==='15 Questions' && e.winner==='students' && e.questionsUsed);
+  if(fq.length){
+    const best = fq.reduce((a,b)=> b.questionsUsed<a.questionsUsed ? b:a);
+    el('bestStat').style.display='block';
+    el('bestStat').textContent = `🏆 Fewest questions to guess it: ${best.questionsUsed} (${best.date})`;
+  } else { el('bestStat').style.display='none'; }
+}
+
+/* ---------- Main Wheel ---------- */
+let currentWheelCategories = [];
+function buildWheel(){
+  const wheel = el('wheel'); wheel.innerHTML='';
+  currentWheelCategories = availableCategories();
+  const n = currentWheelCategories.length;
+  const segAngle = 360/n;
+  const grad = currentWheelCategories.map((c,i)=>`${c.color} ${i*segAngle}deg ${(i+1)*segAngle}deg`).join(', ');
+  wheel.style.background = `conic-gradient(from 0deg, ${grad})`;
+  currentWheelCategories.forEach((c,i)=>{
+    const mid = i*segAngle + segAngle/2;
+    const label = document.createElement('div');
+    label.className='segment-label';
+    label.style.transform = `rotate(${mid-90}deg)`;
+    label.textContent = c.name;
+    wheel.appendChild(label);
+  });
+}
+
+function spin(){
+  if(spinning) return;
+  spinning = true;
+  el('spinBtn').classList.add('disabled');
+  resetPanel();
+  const n = currentWheelCategories.length;
+  const segAngle = 360/n;
+
+  // Pick the winning category FIRST, then rotate the wheel to land exactly on it.
+  const chosenIndex = Math.floor(Math.random()*n);
+  const mid = chosenIndex*segAngle + segAngle/2;
+  const targetMod = ((360 - mid) % 360 + 360) % 360;
+
+  const base = currentRotation - (currentRotation % 360);
+  let target = base + targetMod;
+  const extraSpins = 5 + Math.floor(Math.random()*3);
+  while(target <= currentRotation) target += 360;
+  target += extraSpins*360;
+
+  el('wheel').style.transform = `rotate(${target}deg)`;
+  currentRotation = target;
+
+  setTimeout(()=>{
+    spinning = false;
+    el('spinBtn').classList.remove('disabled');
+    showCategory(currentWheelCategories[chosenIndex]);
+  }, 4300);
+}
+
+/* ---------- Category Panel ---------- */
+function resetPanel(){
+  clearInterval(timerInterval); timerRunning=false;
+  el('panel').style.display='none';
+  el('timerRow').style.display='none';
+  el('revealBtn').style.display='none';
+  el('answerBox').style.display='none'; el('answerBox').textContent='';
+  el('catNote').style.display='none';
+  el('fifteenQBlock').style.display='none';
+  el('secretReveal').textContent='— send the group to the hall first —';
+  el('secretReveal').classList.remove('spinning');
+  el('qCount').textContent='0';
+  pendingCategory=null; pendingLabel=''; pendingQCount=0;
+}
+let pendingQCount = 0;
+
+function showCategory(cat){
+  const panel = el('panel');
+  panel.style.display='block';
+  el('catTitle').textContent = cat.name;
+  pendingCategory = cat.key;
+
+  if(cat.key==='riddle' || cat.key==='estimation'){
+    const item = drawItem(cat.key);
+    pendingLabel = cat.name;
+    el('catPrompt').textContent = item.q;
+    el('answerBox').dataset.answer = item.a;
+    startTimer(cat.key==='riddle' ? 60 : 45);
+    el('revealBtn').style.display='block';
+    el('revealBtn').onclick = ()=>{
+      el('answerBox').textContent = "Answer: " + el('answerBox').dataset.answer;
+      el('answerBox').style.display='block';
+    };
+    if(activeData().exhausted[cat.key]){
+      el('catNote').style.display='block';
+      el('catNote').textContent = `That was the last new one for ${state.activeClass} — ${cat.name} just left the wheel.`;
+      buildWheel();
+    }
+  } else if(cat.key==='convince'){
+    const prompt = drawItem('convince');
+    pendingLabel = cat.name;
+    el('catPrompt').textContent = `"${prompt}"`;
+    el('catNote').style.display='block';
+    el('catNote').textContent = "Call out which side you're taking — class argues the other. Send a hallway judge if you want a neutral call.";
+    if(activeData().exhausted.convince){
+      el('catNote').textContent += ` Also — that was the last new prompt for ${state.activeClass}, so Convince the Teacher just left the wheel.`;
+      buildWheel();
+    }
+    startTimer(90);
+  } else if(cat.key==='fifteen'){
+    pendingLabel = "15 Questions";
+    el('catPrompt').textContent = "Send 3–4 students to the hall. Then reveal the secret item for everyone left in the room.";
+    el('fifteenQBlock').style.display='block';
+  } else if(cat.key==='beat'){
+    const challenge = BEAT_THE_TEACHER[Math.floor(Math.random()*BEAT_THE_TEACHER.length)];
+    pendingLabel = challenge.name;
+    el('catPrompt').textContent = challenge.name;
+    if(challenge.judge){
+      el('catNote').style.display='block';
+      el('catNote').textContent = "Send a hallway judge in for this one — they didn't see the room's reaction.";
+    }
+  }
+}
+
+function startTimer(seconds){
+  timerSeconds = seconds; timerRunning = true;
+  el('timerRow').style.display='flex';
+  el('timerPause').textContent='Pause';
+  updateTimerDisplay();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    if(!timerRunning) return;
+    timerSeconds--;
+    updateTimerDisplay();
+    if(timerSeconds<=0){ clearInterval(timerInterval); el('timerDisplay').textContent="TIME'S UP"; }
+  },1000);
+}
+function updateTimerDisplay(){
+  const m = Math.floor(timerSeconds/60), s = timerSeconds%60;
+  el('timerDisplay').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+}
+el('timerPause').addEventListener('click', ()=>{
+  timerRunning = !timerRunning;
+  el('timerPause').textContent = timerRunning ? 'Pause':'Resume';
+});
+el('timerReset').addEventListener('click', ()=>{
+  if(pendingCategory==='riddle') startTimer(60);
+  else if(pendingCategory==='estimation') startTimer(45);
+  else if(pendingCategory==='convince') startTimer(90);
+});
+
+/* ---------- 15 Questions block ---------- */
+let secretSpinning = false;
+el('secretBtn').addEventListener('click', ()=>{
+  if(secretSpinning) return;
+  secretSpinning = true;
+  const reveal = el('secretReveal');
+  reveal.classList.add('spinning');
+  let ticks = 0;
+  const spinInt = setInterval(()=>{
+    reveal.textContent = SECRET_ITEMS[Math.floor(Math.random()*SECRET_ITEMS.length)];
+    ticks++;
+    if(ticks>14){
+      clearInterval(spinInt);
+      reveal.classList.remove('spinning');
+      secretSpinning = false;
+    }
+  },90);
+});
+el('qPlus').addEventListener('click', ()=>{
+  pendingQCount = Math.min(15, pendingQCount+1);
+  el('qCount').textContent = pendingQCount;
+});
+el('qMinus').addEventListener('click', ()=>{
+  pendingQCount = Math.max(0, pendingQCount-1);
+  el('qCount').textContent = pendingQCount;
+});
+
+/* ---------- Recording winner ---------- */
+document.querySelector('.result-buttons').addEventListener('click',(e)=>{
+  const winner = e.target.dataset.winner;
+  if(!winner || !pendingCategory) return;
+  const d = activeData();
+  const today = new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const entry = { date:today, game:pendingLabel, winner };
+  if(pendingCategory==='fifteen' && winner==='students'){ entry.questionsUsed = pendingQCount; }
+  d.log.push(entry);
+  if(winner==='students'){ d.students++; pulse('studentScore'); }
+  else { d.teacher++; pulse('teacherScore'); }
+  clearInterval(timerInterval);
+  resetPanel();
+  renderScoreboard(); renderLog();
+});
+
+/* ---------- Save / Load ---------- */
+function exportSave(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `teacher-vs-students-save-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function importSave(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.classes) throw new Error('bad format');
+      Object.values(data.classes).forEach(c=>{ if(!c.queues) c.queues={riddle:[],estimation:[],convince:[]}; });
+      state = data;
+      if(!state.classes[state.activeClass]) state.activeClass = Object.keys(state.classes)[0];
+      resetPanel(); renderAll();
+    }catch(err){ alert("That file doesn't look like a valid save file."); }
+  };
+  reader.readAsText(file);
+}
+el('saveBtn').addEventListener('click', exportSave);
+el('loadBtn').addEventListener('click', ()=> el('fileInput').click());
+el('fileInput').addEventListener('change',(e)=>{ if(e.target.files[0]) importSave(e.target.files[0]); e.target.value=''; });
+
+el('spinBtn').addEventListener('click', spin);
+
+function renderAll(){ renderTabs(); renderScoreboard(); renderLog(); buildWheel(); }
+renderAll();
+</script>
+</body>
+</html>
