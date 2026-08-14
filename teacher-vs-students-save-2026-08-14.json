@@ -1,0 +1,65 @@
+{
+  "activeClass": "Period 2",
+  "classes": {
+    "Period 2": {
+      "students": 0,
+      "teacher": 0,
+      "log": [],
+      "queues": {
+        "riddle": [],
+        "estimation": [],
+        "convince": []
+      },
+      "exhausted": {
+        "riddle": false,
+        "estimation": false,
+        "convince": false
+      }
+    },
+    "Period 4": {
+      "students": 0,
+      "teacher": 0,
+      "log": [],
+      "queues": {
+        "riddle": [],
+        "estimation": [],
+        "convince": []
+      },
+      "exhausted": {
+        "riddle": false,
+        "estimation": false,
+        "convince": false
+      }
+    },
+    "Period 6": {
+      "students": 0,
+      "teacher": 0,
+      "log": [],
+      "queues": {
+        "riddle": [],
+        "estimation": [],
+        "convince": []
+      },
+      "exhausted": {
+        "riddle": false,
+        "estimation": false,
+        "convince": false
+      }
+    },
+    "Period 7": {
+      "students": 0,
+      "teacher": 0,
+      "log": [],
+      "queues": {
+        "riddle": [],
+        "estimation": [],
+        "convince": []
+      },
+      "exhausted": {
+        "riddle": false,
+        "estimation": false,
+        "convince": false
+      }
+    }
+  }
+}
